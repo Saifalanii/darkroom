@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Darkroom — Easy Photo Editor</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17181b">
@@ -22,10 +22,12 @@
     --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
+  html,body{height:100%;touch-action:pan-x pan-y}
   body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;min-height:100vh}
 
-  header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--line);flex-shrink:0;gap:10px}
+  header{display:flex;align-items:center;justify-content:space-between;
+    padding:calc(12px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 12px calc(20px + env(safe-area-inset-left));
+    border-bottom:1px solid var(--line);flex-shrink:0;gap:10px}
   .brand{display:flex;align-items:center;gap:10px;min-width:0}
   .brand .dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;
     background:radial-gradient(circle at 35% 35%, #ffd98a, var(--accent) 60%, #8a6420);
@@ -160,7 +162,7 @@
     text-decoration:underline;text-underline-offset:3px}
   .reset-link:hover{color:var(--text);background:none}
 
-  .panel-footer{margin-top:auto;padding:16px 18px;border-top:1px solid var(--line)}
+  .panel-footer{margin-top:auto;padding:16px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
   .panel-footer button{width:100%;padding:11px}
 
   #fileInput,#lookImport{display:none}
@@ -340,6 +342,58 @@
   const $ = id => document.getElementById(id);
   const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
   const lerp=(a,b,t)=>a+(b-a)*t;
+
+  /* =============== session autosave (IndexedDB) =============== */
+  // Keeps your loaded photos + edits so closing/reopening the app doesn't lose progress.
+  const DB_NAME='darkroom-db', DB_VERSION=1, STORE='session';
+  function openSessionDB(){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(DB_NAME,DB_VERSION);
+      req.onupgradeneeded=()=>{req.result.createObjectStore(STORE);};
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error);
+    });
+  }
+  async function idbSet(key,value){
+    try{
+      const db=await openSessionDB();
+      await new Promise((res,rej)=>{
+        const tx=db.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).put(value,key);
+        tx.oncomplete=res;tx.onerror=()=>rej(tx.error);
+      });
+    }catch(e){/* storage unavailable — app still works, just without autosave */}
+  }
+  async function idbGet(key){
+    try{
+      const db=await openSessionDB();
+      return await new Promise((res,rej)=>{
+        const tx=db.transaction(STORE,'readonly');
+        const r=tx.objectStore(STORE).get(key);
+        r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+      });
+    }catch(e){return undefined;}
+  }
+  async function idbDelete(key){
+    try{
+      const db=await openSessionDB();
+      await new Promise((res,rej)=>{
+        const tx=db.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).delete(key);
+        tx.oncomplete=res;tx.onerror=()=>rej(tx.error);
+      });
+    }catch(e){}
+  }
+  let saveTimer=null;
+  function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveSession,500);}
+  async function saveSession(){
+    if(!state.photos.length){await idbDelete('current');return;}
+    const photos=state.photos.map(p=>({blob:p.blob,name:p.name,exif:p.exif||null,geo:p.geo}));
+    await idbSet('current',{
+      photos, active:state.active, preset:state.preset, intensity:state.intensity,
+      params:state.params, myLooks,
+    });
+  }
 
   /* =============== presets =============== */
   const PRESETS = [
@@ -604,6 +658,7 @@
     if(history.stack.length>40)history.stack.shift();
     history.pos=history.stack.length-1;
     updateUndoBtns();
+    scheduleSave();
   }
   function restore(s){
     state.active=clamp(s.pi,0,state.photos.length-1);
@@ -616,6 +671,7 @@
     syncSliders(); refreshBake(); buildFilmstrip();
     if(state.selEditing)buildSelOverlay();
     syncSelControls();
+    scheduleSave();
   }
   function undo(){if(history.pos>0){history.pos--;restore(history.stack[history.pos]);updateUndoBtns();}}
   function redo(){if(history.pos<history.stack.length-1){history.pos++;restore(history.stack[history.pos]);updateUndoBtns();}}
@@ -700,7 +756,7 @@
       if(p.custom){item.querySelector('.del').addEventListener('click',()=>{
         myLooks=myLooks.filter(l=>l.id!==p.id);
         if(state.preset===p.id)state.preset='original';
-        renderFilterGrid();render();
+        renderFilterGrid();render();scheduleSave();
       });}
       grid.appendChild(item);
     });
@@ -718,6 +774,7 @@
     myLooks.push({id:'look_'+Date.now(),name:name.slice(0,18),preset:state.preset.startsWith('look_')?'original':state.preset,
       intensity:state.intensity,params:{...state.params}});
     renderFilterGrid();
+    scheduleSave();
     showToast('Saved "'+name+'" — tip: export your looks to keep them for next time');
   });
   $('exportLooksBtn').addEventListener('click',()=>{
@@ -733,7 +790,7 @@
     const r=new FileReader();
     r.onload=()=>{try{
       const arr=JSON.parse(r.result);
-      if(Array.isArray(arr)){myLooks=myLooks.concat(arr.filter(l=>l&&l.id&&l.params));renderFilterGrid();showToast('Looks imported');}
+      if(Array.isArray(arr)){myLooks=myLooks.concat(arr.filter(l=>l&&l.id&&l.params));renderFilterGrid();scheduleSave();showToast('Looks imported');}
     }catch{showToast('That file could not be read as a looks file');}};
     r.readAsText(f);
   });
@@ -1227,7 +1284,7 @@
     list.forEach(file=>{
       const url=URL.createObjectURL(file);
       const img=new Image();
-      const photo={img,name:(file.name||'photo').replace(/\.[^.]+$/,''),exif:null,
+      const photo={img,name:(file.name||'photo').replace(/\.[^.]+$/,''),exif:null,blob:file,
         geo:{rot90:0,straighten:0,crop:null},baked:null,thumbUrl:url};
       if(file.type==='image/jpeg'){
         file.arrayBuffer().then(b=>{photo.exif=extractExif(b);}).catch(()=>{});
@@ -1238,6 +1295,7 @@
         if(loaded===list.length){
           state.active=state.photos.length-list.length; // first of the new batch
           onPhotosReady();
+          scheduleSave();
         }
       };
       img.src=url;
@@ -1251,7 +1309,8 @@
     });
   }
   // if a photo was shared in via the OS share sheet, the service worker stashed it — pick it up here
-  if(new URLSearchParams(location.search).get('shared')==='1'){
+  const isSharedLaunch = new URLSearchParams(location.search).get('shared')==='1';
+  if(isSharedLaunch){
     window.addEventListener('load',async()=>{
       try{
         const cache=await caches.open('darkroom-shared-v1');
@@ -1264,6 +1323,37 @@
         }
         history.replaceState(null,'',location.pathname);
       }catch(err){/* no shared photo waiting — normal case */}
+    });
+  }else{
+    // no shared photo incoming — restore whatever was loaded last time, if anything
+    window.addEventListener('load',async()=>{
+      const data=await idbGet('current');
+      if(!data||!data.photos||!data.photos.length)return;
+      myLooks=data.myLooks||[];
+      let loaded=0;
+      const total=data.photos.length;
+      state.photos=new Array(total);
+      data.photos.forEach((p,idx)=>{
+        const url=URL.createObjectURL(p.blob);
+        const img=new Image();
+        const photo={img,name:p.name,exif:p.exif||null,blob:p.blob,
+          geo:p.geo||{rot90:0,straighten:0,crop:null},baked:null,thumbUrl:url};
+        img.onload=()=>{
+          state.photos[idx]=photo;
+          loaded++;
+          if(loaded===total){
+            state.active=clamp(data.active??0,0,total-1);
+            state.preset=data.preset||'original';
+            state.intensity=typeof data.intensity==='number'?data.intensity:1;
+            state.params={...DEFAULT_PARAMS,...(data.params||{})};
+            onPhotosReady();
+            syncSliders();
+            renderFilterGrid();
+            showToast('Picked up where you left off');
+          }
+        };
+        img.src=url;
+      });
     });
   }
 
