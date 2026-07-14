@@ -1237,27 +1237,37 @@
   });
   window.addEventListener('resize',()=>{if(state.selEditing)layoutSelOverlay();});
 
-  /* =============== compare (hold-to-compare, without blocking scroll) =============== */
-  let comparePending=false,compareTimer=null,compareSX=0,compareSY=0;
+  /* =============== compare (hold-to-compare, with manual scroll takeover) =============== */
+  // Safari unreliably honors touch-action on <canvas>, so instead of trusting the browser
+  // to scroll the page when you drag off the canvas, we detect the drag ourselves and
+  // scroll the page manually — this works regardless of that bug.
+  let comparePending=false,compareTimer=null,compareSX=0,compareSY=0,compareLastY=0,scrolling=false;
   const MOVE_TOLERANCE=8; // px of finger movement before we treat it as a scroll, not a hold
   glCanvas.addEventListener('pointerdown',e=>{
     if(state.cropping||state.selEditing)return;
-    comparePending=true;
-    compareSX=e.clientX;compareSY=e.clientY;
+    comparePending=true;scrolling=false;
+    compareSX=e.clientX;compareSY=e.clientY;compareLastY=e.clientY;
     clearTimeout(compareTimer);
     compareTimer=setTimeout(()=>{
       if(comparePending){state.comparing=true;render();}
     },180); // long enough to distinguish a hold from the start of a scroll
-  });
+  },{passive:true});
   glCanvas.addEventListener('pointermove',e=>{
-    if(!comparePending)return;
-    if(Math.abs(e.clientX-compareSX)>MOVE_TOLERANCE||Math.abs(e.clientY-compareSY)>MOVE_TOLERANCE){
-      comparePending=false;clearTimeout(compareTimer);
-      if(state.comparing){state.comparing=false;render();}
+    if(comparePending){
+      if(Math.abs(e.clientX-compareSX)>MOVE_TOLERANCE||Math.abs(e.clientY-compareSY)>MOVE_TOLERANCE){
+        comparePending=false;clearTimeout(compareTimer);
+        if(state.comparing){state.comparing=false;render();}
+        scrolling=true;
+      }
     }
-  });
+    if(scrolling){
+      const dy=compareLastY-e.clientY;
+      compareLastY=e.clientY;
+      (document.scrollingElement||document.documentElement).scrollTop+=dy;
+    }
+  },{passive:true});
   function endCompareGesture(){
-    comparePending=false;clearTimeout(compareTimer);
+    comparePending=false;scrolling=false;clearTimeout(compareTimer);
     if(state.comparing){state.comparing=false;render();}
   }
   glCanvas.addEventListener('pointerup',endCompareGesture);
