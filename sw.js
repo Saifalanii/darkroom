@@ -1,4 +1,4 @@
-const CACHE_NAME = 'darkroom-shell-v1';
+const CACHE_NAME = 'darkroom-shell-v2';
 const SHARE_CACHE = 'darkroom-shared-v1';
 const SHELL_ASSETS = [
   './index.html',
@@ -52,13 +52,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell: cache-first, falling back to network, falling back to the cached shell if offline
+  // App shell: network-first, so a new deploy shows up immediately when online.
+  // Falls back to whatever was last cached only when the network is unavailable.
   if (event.request.method === 'GET') {
     event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).catch(() => caches.match('./index.html'));
-      })
+      fetch(event.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return res;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
     );
   }
 });
