@@ -62,7 +62,7 @@
     background:radial-gradient(ellipse at 50% 40%, #1c1e22 0%, var(--bg) 70%)}
   .canvas-wrap{position:relative;display:none;align-items:center;justify-content:center;max-width:100%;min-height:0}
   #glCanvas{max-width:100%;max-height:calc(100vh - 260px);border-radius:8px;
-    box-shadow:0 20px 60px rgba(0,0,0,.55);display:block;touch-action:none;user-select:none}
+    box-shadow:0 20px 60px rgba(0,0,0,.55);display:block;touch-action:pan-y;user-select:none}
   .compare-hint{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);white-space:nowrap;display:none}
 
   /* crop overlay */
@@ -174,6 +174,22 @@
     .filters{grid-template-columns:repeat(4,1fr)}
     .compare-hint{display:none !important}
   }
+  /* full-size preview: hide everything but the photo itself */
+  body.preview-mode aside{display:none !important}
+  body.preview-mode .filmstrip{display:none !important}
+  body.preview-mode .stage{padding:10px}
+  body.preview-mode #glCanvas{max-height:calc(100vh - 150px) !important}
+  body.preview-mode #previewBtn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .preview-exit-hint{display:none;font-family:var(--mono);font-size:10.5px;color:var(--text-dim);text-align:center}
+  body.preview-mode .preview-exit-hint{display:block}
+
+  @media (max-width:480px){
+    header{gap:6px}
+    .brand span{display:none}
+    .header-actions{gap:5px}
+    .header-actions button{padding:7px 9px;font-size:12.5px}
+    .header-actions button.icon-btn{padding:7px 9px}
+  }
   @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 </head>
@@ -188,6 +204,7 @@
   <div class="header-actions">
     <button class="icon-btn" id="undoBtn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↩︎</button>
     <button class="icon-btn" id="redoBtn" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>↪︎</button>
+    <button class="icon-btn" id="previewBtn" title="Preview full-size" aria-label="Preview full-size" style="display:none">⛶</button>
     <button id="newPhotoBtn" style="display:none">Add photos</button>
     <button class="primary" id="saveBtn" style="display:none">Save ▾</button>
     <div class="export-menu" id="exportMenu">
@@ -244,6 +261,7 @@
     </div>
 
     <div class="compare-hint" id="compareHint">hold the photo to compare with the original · Ctrl+Z to undo</div>
+    <div class="preview-exit-hint">tap ⛶ again to go back to editing</div>
     <div class="filmstrip" id="filmstrip"></div>
   </div>
 
@@ -653,8 +671,11 @@
     };
   }
   function pushHistory(){
+    const snap=snapshot();
+    const top=history.stack[history.pos];
+    if(top && JSON.stringify(top)===JSON.stringify(snap)){scheduleSave();return;}
     history.stack=history.stack.slice(0,history.pos+1);
-    history.stack.push(snapshot());
+    history.stack.push(snap);
     if(history.stack.length>40)history.stack.shift();
     history.pos=history.stack.length-1;
     updateUndoBtns();
@@ -1216,12 +1237,49 @@
   });
   window.addEventListener('resize',()=>{if(state.selEditing)layoutSelOverlay();});
 
-  /* =============== compare =============== */
+  /* =============== compare (hold-to-compare, without blocking scroll) =============== */
+  let comparePending=false,compareTimer=null,compareSX=0,compareSY=0;
+  const MOVE_TOLERANCE=8; // px of finger movement before we treat it as a scroll, not a hold
   glCanvas.addEventListener('pointerdown',e=>{
     if(state.cropping||state.selEditing)return;
-    e.preventDefault();state.comparing=true;render();
+    comparePending=true;
+    compareSX=e.clientX;compareSY=e.clientY;
+    clearTimeout(compareTimer);
+    compareTimer=setTimeout(()=>{
+      if(comparePending){state.comparing=true;render();}
+    },180); // long enough to distinguish a hold from the start of a scroll
   });
-  window.addEventListener('pointerup',()=>{if(state.comparing){state.comparing=false;render();}});
+  glCanvas.addEventListener('pointermove',e=>{
+    if(!comparePending)return;
+    if(Math.abs(e.clientX-compareSX)>MOVE_TOLERANCE||Math.abs(e.clientY-compareSY)>MOVE_TOLERANCE){
+      comparePending=false;clearTimeout(compareTimer);
+      if(state.comparing){state.comparing=false;render();}
+    }
+  });
+  function endCompareGesture(){
+    comparePending=false;clearTimeout(compareTimer);
+    if(state.comparing){state.comparing=false;render();}
+  }
+  glCanvas.addEventListener('pointerup',endCompareGesture);
+  glCanvas.addEventListener('pointercancel',endCompareGesture);
+  window.addEventListener('pointerup',endCompareGesture);
+
+  /* =============== full-size preview =============== */
+  let previewMode=false;
+  function togglePreview(){
+    if(!previewMode && state.cropping)exitCrop();
+    if(!previewMode && state.selEditing)exitSelMode();
+    previewMode=!previewMode;
+    document.body.classList.toggle('preview-mode',previewMode);
+    $('previewBtn').textContent=previewMode?'✕':'⛶';
+    $('previewBtn').setAttribute('aria-label',previewMode?'Exit preview':'Preview full-size');
+    // canvas display size changed — relayout anything overlaid on top of it
+    requestAnimationFrame(()=>{
+      if(state.cropping)layoutCrop();
+      if(state.selEditing)layoutSelOverlay();
+    });
+  }
+  $('previewBtn').addEventListener('click',togglePreview);
 
   /* =============== EXIF (copy from original JPEG) =============== */
   function extractExif(buf){
@@ -1364,6 +1422,7 @@
     $('compareHint').style.display='block';
     $('newPhotoBtn').style.display='inline-block';
     $('saveBtn').style.display='inline-block';
+    $('previewBtn').style.display='inline-block';
     buildFilmstrip();
     refreshBake();
     if(history.stack.length===0)pushHistory();
