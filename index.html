@@ -96,11 +96,15 @@
     background:#fff;border:2px solid var(--accent);transform:translate(50%,-50%);cursor:ew-resize}
 
   /* filmstrip */
-  .filmstrip{display:none;gap:8px;overflow-x:auto;max-width:100%;padding:4px}
-  .filmstrip .frame{width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:hidden;
+  .filmstrip{display:none;gap:8px;overflow-x:auto;max-width:100%;padding:4px 4px 8px}
+  .filmstrip .frame{position:relative;width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:visible;
     border:2px solid transparent;cursor:pointer;background:var(--panel-2)}
   .filmstrip .frame.active{border-color:var(--accent)}
-  .filmstrip .frame img{width:100%;height:100%;object-fit:cover;display:block}
+  .filmstrip .frame img{width:100%;height:100%;object-fit:cover;display:block;border-radius:6px}
+  .filmstrip .frame-del{position:absolute;top:-6px;right:-6px;width:19px;height:19px;border-radius:50%;
+    background:rgba(0,0,0,.75);border:1px solid var(--line);color:#fff;font-size:10.5px;line-height:1;
+    padding:0;display:flex;align-items:center;justify-content:center}
+  .filmstrip .frame-del:hover{background:#c0392b}
 
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
     background:var(--panel-2);border:1px solid var(--line);color:var(--text);
@@ -1440,19 +1444,46 @@
   }
   function buildFilmstrip(){
     const fs=$('filmstrip');
-    if(state.photos.length<2){fs.style.display='none';return;}
+    if(state.photos.length<1){fs.style.display='none';return;}
     fs.style.display='flex';fs.innerHTML='';
     state.photos.forEach((ph,i)=>{
       const f=document.createElement('div');
       f.className='frame'+(i===state.active?' active':'');
       f.setAttribute('role','button');f.setAttribute('tabindex','0');
       f.setAttribute('aria-label','Edit photo '+(i+1));
-      f.innerHTML=`<img src="${ph.thumbUrl}" alt="">`;
+      f.innerHTML=`<img src="${ph.thumbUrl}" alt=""><button class="frame-del" aria-label="Remove this photo" title="Remove this photo">✕</button>`;
       const pick=()=>{state.active=i;state.selPoints=[];state.selActive=-1;buildFilmstrip();refreshBake();syncSliders();syncSelControls();if(state.selEditing)buildSelOverlay();};
-      f.addEventListener('click',pick);
+      f.addEventListener('click',e=>{if(e.target.classList.contains('frame-del'))return;pick();});
       f.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
+      f.querySelector('.frame-del').addEventListener('click',e=>{e.stopPropagation();removePhoto(i);});
       fs.appendChild(f);
     });
+  }
+  function removePhoto(idx){
+    URL.revokeObjectURL(state.photos[idx].thumbUrl);
+    state.photos.splice(idx,1);
+    history.stack=[];history.pos=-1;updateUndoBtns();
+    state.selPoints=[];state.selActive=-1;
+    if(state.photos.length===0){
+      state.active=-1;
+      dropzone.style.display='';
+      $('canvasWrap').style.display='none';
+      $('panel').style.display='none';
+      $('compareHint').style.display='none';
+      $('newPhotoBtn').style.display='none';
+      $('saveBtn').style.display='none';
+      $('previewBtn').style.display='none';
+      $('filmstrip').style.display='none';
+      idbDelete('current');
+      showToast('Photo removed');
+      return;
+    }
+    state.active=clamp(idx>=state.photos.length?state.photos.length-1:idx,0,state.photos.length-1);
+    buildFilmstrip();
+    refreshBake();
+    syncSliders();
+    pushHistory(); // fresh undo baseline for the remaining photo(s)
+    showToast('Photo removed');
   }
   dropzone.addEventListener('click',()=>fileInput.click());
   dropzone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.click();}});
