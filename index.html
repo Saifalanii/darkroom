@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Darkroom — Easy Photo Editor</title>
+<title>Aperlume</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17181b">
 <link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Darkroom">
+<meta name="apple-mobile-web-app-title" content="Aperlume">
 <style>
   :root{
     --bg:#16171a; --panel:#1e2024; --panel-2:#25272c; --line:#34373f;
@@ -22,7 +22,8 @@
     --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;overflow:hidden;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+  html{background:var(--bg)}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
   body{background:var(--bg);color:var(--text);font-family:var(--sans);
     display:flex;flex-direction:column;height:100dvh;position:relative}
   /* signature texture: a faint film-grain field over the whole app, so
@@ -70,11 +71,11 @@
   .export-menu hr{border:none;border-top:1px solid var(--line);margin:5px 4px}
 
   /* ============ stage: the photo always stays on screen ============ */
-  .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+  .stage{flex:1;min-height:0;display:flex;align-items:flex-start;justify-content:center;
     padding:12px calc(12px + env(safe-area-inset-right)) 12px calc(12px + env(safe-area-inset-left));
     position:relative;
     background:radial-gradient(ellipse at 50% 40%, #1c1e22 0%, var(--bg) 70%)}
-  .canvas-wrap{position:relative;display:none;align-items:center;justify-content:center;
+  .canvas-wrap{position:relative;display:none;align-items:flex-start;justify-content:center;
     width:100%;height:100%;min-height:0}
   #glCanvas{max-width:100%;max-height:100%;width:auto;height:auto;border-radius:8px;
     box-shadow:0 14px 44px rgba(0,0,0,.55);display:block;touch-action:none;user-select:none;-webkit-touch-callout:none}
@@ -136,7 +137,7 @@
   .dock{display:none;flex-direction:column;flex-shrink:0;background:var(--panel);
     border-top:1px solid var(--line);
     padding-bottom:env(safe-area-inset-bottom)}
-  .dock-panes{position:relative;height:150px}
+  .dock-panes{position:relative;height:176px;overflow:hidden}
   .dock-pane{display:none;height:100%}
   .dock-pane.active{display:block}
   .hscroll{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;height:100%;
@@ -165,6 +166,19 @@
     font-size:11.5px;color:var(--text-dim);cursor:pointer;background:var(--panel-2);
     border:1px solid var(--line);border-radius:12px;padding:10px 13px;line-height:1.35}
   .check-card input{width:16px;height:16px;accent-color:var(--accent);flex-shrink:0}
+
+  /* filters pane: thumbnails scroll sideways up top; the strength slider
+     and look buttons stay fixed underneath so they're reachable without
+     scrolling past every preset first */
+  .filters-stack{display:flex;flex-direction:column;height:100%}
+  .filters-row{flex:0 0 auto;padding:10px 14px 6px;height:auto}
+  .filters-controls{flex:1;min-height:0;padding:2px 14px 10px;display:flex;flex-direction:column;justify-content:center;gap:9px}
+  .slider-inline{display:flex;align-items:center;gap:10px}
+  .slider-inline-label{font-size:12px;color:var(--text-dim);flex-shrink:0;width:52px}
+  .slider-inline input[type=range]{flex:1}
+  .slider-inline-val{font-family:var(--mono);font-size:11px;color:var(--text-dim);flex-shrink:0;min-width:38px;text-align:right}
+  .filters-btns{display:flex;gap:8px}
+  .filters-btns button{flex:1}
 
   /* filters: sideways strip of thumbnails */
   .filters{display:flex;gap:9px;align-items:flex-start}
@@ -206,7 +220,7 @@
     box-shadow:0 2px 12px rgba(232,176,75,.12),inset 0 0 0 1px rgba(232,176,75,.06)}
   .dock-tab.active svg.i{color:var(--accent)}
 
-  .toast{position:fixed;bottom:calc(230px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);
+  .toast{position:fixed;bottom:calc(256px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);
     background:var(--panel-2);border:1px solid var(--line);color:var(--text);
     padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;
     transition:opacity .25s,transform .25s;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:90vw;text-align:center}
@@ -265,7 +279,7 @@
 <header>
   <div class="brand">
     <svg class="i brand-mark" aria-hidden="true"><use href="#ic-aperture"/></svg>
-    <h1>Darkroom</h1>
+    <h1>Aperlume</h1>
     <span>pro edits, made easy</span>
   </div>
   <div class="header-actions">
@@ -360,17 +374,20 @@
     </section>
 
     <section class="dock-pane" data-pane="filters" id="pane-filters">
-      <div class="hscroll" style="align-items:center">
-        <div class="filters" id="filterGrid"></div>
-        <div class="ctl-card">
-          <div class="lbl"><span>Filter strength</span><span id="intensityVal">100%</span></div>
-          <input type="range" id="intensity" min="0" max="100" value="100" aria-label="Filter strength">
+      <div class="filters-stack">
+        <div class="hscroll filters-row">
+          <div class="filters" id="filterGrid"></div>
         </div>
-        <div class="ctl-card btn-card">
-          <button id="saveLookBtn">+ Save my look</button>
-          <div style="display:flex;gap:8px">
-            <button id="exportLooksBtn" style="flex:1">Export</button>
-            <button id="importLooksBtn" style="flex:1">Import</button>
+        <div class="filters-controls">
+          <div class="slider-inline">
+            <span class="slider-inline-label">Strength</span>
+            <input type="range" id="intensity" min="0" max="100" value="100" aria-label="Filter strength">
+            <span class="slider-inline-val" id="intensityVal">100%</span>
+          </div>
+          <div class="filters-btns">
+            <button id="saveLookBtn">+ Save look</button>
+            <button id="exportLooksBtn">Export</button>
+            <button id="importLooksBtn">Import</button>
           </div>
         </div>
       </div>
@@ -445,7 +462,7 @@
 
   /* =============== session autosave (IndexedDB) =============== */
   // Keeps your loaded photos + edits so closing/reopening the app doesn't lose progress.
-  const DB_NAME='darkroom-db', DB_VERSION=1, STORE='session';
+  const DB_NAME='aperlume-db', DB_VERSION=1, STORE='session';
   function openSessionDB(){
     return new Promise((resolve,reject)=>{
       const req=indexedDB.open(DB_NAME,DB_VERSION);
@@ -929,7 +946,7 @@
     if(myLooks.length===0){showToast('No saved looks yet — dial in a style and press "+ Save my look"');return;}
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([JSON.stringify(myLooks,null,2)],{type:'application/json'}));
-    a.download='darkroom-looks.json';a.click();
+    a.download='aperlume-looks.json';a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   });
   $('importLooksBtn').addEventListener('click',()=>$('lookImport').click());
@@ -958,6 +975,7 @@
     const n=d.length/4;
     const luma=new Float32Array(n); // kept for the dark-texture pass below
     let sumL=0,sumR=0,sumG=0,sumB=0,sumSat=0,skinPx=0,skyPx=0,skyTopPx=0;
+    let darkR=0,darkG=0,darkB=0,darkN=0;
     for(let i=0,p=0;i<d.length;i+=4,p++){
       const r=d[i],g=d[i+1],b=d[i+2];
       const l=Math.round(.2126*r+.7152*g+.0722*b);
@@ -973,11 +991,16 @@
         skyTopPx++;
         if(b>r+8 && l>110) skyPx++;
       }
+      // color of the dark region: a black shirt or true silhouette is
+      // fairly neutral in the shadows; dense foliage in shadow is
+      // distinctly green-dominant even when dark. Used below so a
+      // forest canopy isn't gated the same way a solid dark garment is.
+      if(l<=48){darkR+=r;darkG+=g;darkB+=b;darkN++;}
     }
     const pct=q=>{let acc=0,t=n*q;for(let i=0;i<256;i++){acc+=hist[i];if(acc>=t)return i;}return 255;};
     // shadow character: is the dark end of the histogram a solid black mass
     // (a black shirt, a silhouette) or near-black tones with recoverable
-    // detail? Two signals:
+    // detail? Three signals:
     // 1) tonal spread — how much of the dark region sits in the 11–48 band
     //    vs pinned at 0–10
     let crushed=0,band=0;
@@ -994,10 +1017,14 @@
       if(luma[p]<=48&&luma[p-1]<=48){darkEdge+=Math.abs(luma[p]-luma[p-1]);darkEdgeN++;}
     }
     const darkTexture=darkEdgeN>20?darkEdge/darkEdgeN:0;
+    // 3) color — a green cast in the dark region reads as foliage/forest,
+    //    not a neutral black object, regardless of how smooth it looks at
+    //    analysis resolution.
+    const darkIsFoliage = darkN>0 && (darkG/darkN)>(darkR/darkN)+6 && (darkG/darkN)>(darkB/darkN)+6;
     return {
       meanL:sumL/n,p2:pct(.02),p98:pct(.98),meanR:sumR/n,meanB:sumB/n,meanSat:sumSat/n,
       skinRatio:skinPx/n, skyRatio:skyTopPx?skyPx/skyTopPx:0,
-      shadowDetail, darkTexture,
+      shadowDetail, darkTexture, darkIsFoliage,
     };
   }
 
@@ -1066,14 +1093,16 @@
 
     // shadow lift only helps when the dark region actually holds detail —
     // lifting a solid dark object (black shirt, clean silhouette) just
-    // turns it grey and noisy. Requires tonal spread in the dark band or
-    // real texture inside it.
-    const liftable = a.shadowDetail>0.45 || a.darkTexture>3.5;
+    // turns it grey and noisy. Requires tonal spread in the dark band,
+    // real texture inside it, or a green cast marking it as foliage —
+    // dense forest canopy is dark but always worth lifting.
+    const liftable = a.shadowDetail>0.45 || a.darkTexture>3.5 || a.darkIsFoliage;
 
     switch(a.type){
       case 'landscape':
         vibrance=clamp(vibrance+10,0,35);            // skies and foliage read better punchier
         sharpen=Math.max(sharpen,26);
+        if(liftable)shadows=Math.max(shadows,10);    // shaded foliage/forest usually needs opening up
         break;
       case 'low-light':
         bright=clamp(bright+8,-10,30);
@@ -1237,7 +1266,7 @@
     const wrap=$('canvasWrap');
     cropOverlay.style.width=cw+'px';cropOverlay.style.height=ch+'px';
     cropOverlay.style.left=((wrap.clientWidth-cw)/2)+'px';
-    cropOverlay.style.top=((wrap.clientHeight-ch)/2)+'px';
+    cropOverlay.style.top='0px';
     const x=cr.x*cw,y=cr.y*ch,w=cr.w*cw,h=cr.h*ch;
     cropRect.style.left=x+'px';cropRect.style.top=y+'px';
     cropRect.style.width=w+'px';cropRect.style.height=h+'px';
@@ -1308,7 +1337,7 @@
     const cw=glCanvas.clientWidth,ch=glCanvas.clientHeight,wrap=$('canvasWrap');
     selOverlay.style.width=cw+'px';selOverlay.style.height=ch+'px';
     selOverlay.style.left=((wrap.clientWidth-cw)/2)+'px';
-    selOverlay.style.top=((wrap.clientHeight-ch)/2)+'px';
+    selOverlay.style.top='0px';
     [...selOverlay.querySelectorAll('.sel-point')].forEach((el,i)=>{
       const p=state.selPoints[i];if(!p)return;
       const rx=p.r*cw; // radius in px (uv is already width-relative; height uses same px since we correct aspect in shader, screen box keeps proportion)
@@ -1571,7 +1600,7 @@
   if(isSharedLaunch){
     window.addEventListener('load',async()=>{
       try{
-        const cache=await caches.open('darkroom-shared-v1');
+        const cache=await caches.open('aperlume-shared-v1');
         const res=await cache.match('/shared-photo');
         if(res){
           const blob=await res.blob();
