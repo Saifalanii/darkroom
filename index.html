@@ -22,23 +22,28 @@
     --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{min-height:100vh;min-height:100dvh;touch-action:pan-x pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-  body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;min-height:100vh}
+  html,body{height:100%;overflow:hidden;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);
+    display:flex;flex-direction:column;height:100dvh}
+
+  svg.i{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;
+    stroke-linecap:round;stroke-linejoin:round;display:block;flex-shrink:0}
+  svg.i.fill{fill:currentColor;stroke:none}
 
   header{display:flex;align-items:center;justify-content:space-between;
-    padding:calc(12px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 12px calc(20px + env(safe-area-inset-left));
-    border-bottom:1px solid var(--line);flex-shrink:0;gap:10px;
-    position:sticky;top:0;z-index:20;background:var(--bg)}
-  .brand{display:flex;align-items:center;gap:10px;min-width:0}
-  .brand .dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;
+    padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left));
+    border-bottom:1px solid var(--line);flex-shrink:0;gap:8px;background:var(--bg);z-index:20}
+  .brand{display:flex;align-items:center;gap:9px;min-width:0}
+  .brand .dot{width:20px;height:20px;border-radius:50%;flex-shrink:0;
     background:radial-gradient(circle at 35% 35%, #ffd98a, var(--accent) 60%, #8a6420);
     box-shadow:0 0 14px rgba(232,176,75,.35)}
   .brand h1{font-size:15px;font-weight:600;letter-spacing:.4px}
   .brand span{font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-left:2px}
-  .header-actions{display:flex;gap:8px;position:relative;align-items:center}
+  .header-actions{display:flex;gap:6px;position:relative;align-items:center}
 
   button{font-family:var(--sans);font-size:13px;font-weight:500;border:1px solid var(--line);
-    background:var(--panel-2);color:var(--text);padding:8px 14px;border-radius:9px;cursor:pointer;
+    background:var(--panel-2);color:var(--text);padding:8px 13px;border-radius:9px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:7px;
     transition:background .15s,border-color .15s,transform .05s}
   button:hover{background:#2d3138}
   button:active{transform:scale(.98)}
@@ -46,7 +51,7 @@
   button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
   button.primary:hover{background:#f2bd5e}
   button:disabled{opacity:.35;cursor:not-allowed}
-  button.icon-btn{padding:8px 11px;font-size:14px;line-height:1}
+  button.icon-btn{padding:8px 9px}
 
   .export-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--panel-2);
     border:1px solid var(--line);border-radius:12px;padding:6px;min-width:250px;z-index:60;
@@ -57,14 +62,18 @@
   .export-menu button small{display:block;color:var(--text-dim);font-size:11px;font-weight:400;margin-top:2px}
   .export-menu hr{border:none;border-top:1px solid var(--line);margin:5px 4px}
 
-  main{flex:1;display:flex;min-height:0}
-  .stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:20px;min-width:0;position:relative;gap:10px;
+  /* ============ stage: the photo always stays on screen ============ */
+  .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+    padding:12px calc(12px + env(safe-area-inset-right)) 12px calc(12px + env(safe-area-inset-left));
+    position:relative;
     background:radial-gradient(ellipse at 50% 40%, #1c1e22 0%, var(--bg) 70%)}
-  .canvas-wrap{position:relative;display:none;align-items:center;justify-content:center;max-width:100%;min-height:0}
-  #glCanvas{max-width:100%;max-height:calc(100vh - 260px);border-radius:8px;
-    box-shadow:0 20px 60px rgba(0,0,0,.55);display:block;touch-action:pan-y;user-select:none;-webkit-touch-callout:none}
-  .compare-hint{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);white-space:nowrap;display:none}
+  .canvas-wrap{position:relative;display:none;align-items:center;justify-content:center;
+    width:100%;height:100%;min-height:0}
+  #glCanvas{max-width:100%;max-height:100%;width:auto;height:auto;border-radius:8px;
+    box-shadow:0 14px 44px rgba(0,0,0,.55);display:block;touch-action:none;user-select:none;-webkit-touch-callout:none}
+  .compare-hint{position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    font-family:var(--mono);font-size:10px;color:var(--text-dim);white-space:nowrap;display:none;
+    background:rgba(23,24,27,.7);padding:3px 10px;border-radius:999px;pointer-events:none}
 
   /* crop overlay */
   .crop-overlay{position:absolute;inset:0;display:none;touch-action:none}
@@ -79,9 +88,6 @@
   .crop-handle[data-h="e"],.crop-handle[data-h="w"]{cursor:ew-resize}
   .crop-handle[data-h="nw"],.crop-handle[data-h="se"]{cursor:nwse-resize}
   .crop-handle[data-h="ne"],.crop-handle[data-h="sw"]{cursor:nesw-resize}
-  .crop-bar{display:none;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
-  .crop-bar .chip{padding:6px 11px;border-radius:999px;font-size:11.5px;font-family:var(--mono)}
-  .crop-bar .chip.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 
   /* selective (local) points */
   .sel-overlay{position:absolute;inset:0;display:none;touch-action:none}
@@ -95,110 +101,151 @@
   .sel-point .sel-resize{position:absolute;top:50%;right:0;width:14px;height:14px;border-radius:50%;
     background:#fff;border:2px solid var(--accent);transform:translate(50%,-50%);cursor:ew-resize}
 
-  /* filmstrip */
-  .filmstrip{display:none;gap:8px;overflow-x:auto;max-width:100%;padding:4px 4px 8px}
-  .filmstrip .frame{position:relative;width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:visible;
+  /* ============ mode bars (crop / spots) sit above the dock ============ */
+  .mode-bar{display:none;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    padding:8px 12px;border-top:1px solid var(--line);background:var(--panel);flex-shrink:0}
+  .mode-bar::-webkit-scrollbar{display:none}
+  .mode-bar .chip{padding:6px 11px;border-radius:999px;font-size:11.5px;font-family:var(--mono);flex-shrink:0}
+  .mode-bar .chip.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  .mode-bar button{flex-shrink:0}
+  .mode-bar .bar-hint{font-size:11px;color:var(--text-dim);font-family:var(--mono);white-space:nowrap;flex-shrink:0}
+
+  /* filmstrip: sideways scroll, above the dock */
+  .filmstrip{display:none;gap:8px;overflow-x:auto;overflow-y:hidden;flex-shrink:0;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    padding:8px 12px 10px;border-top:1px solid var(--line);background:var(--panel)}
+  .filmstrip::-webkit-scrollbar{display:none}
+  .filmstrip .frame{position:relative;width:52px;height:52px;flex-shrink:0;border-radius:8px;overflow:visible;
     border:2px solid transparent;cursor:pointer;background:var(--panel-2)}
   .filmstrip .frame.active{border-color:var(--accent)}
   .filmstrip .frame img{width:100%;height:100%;object-fit:cover;display:block;border-radius:6px}
-  .filmstrip .frame-del{position:absolute;top:-6px;right:-6px;width:19px;height:19px;border-radius:50%;
-    background:rgba(0,0,0,.75);border:1px solid var(--line);color:#fff;font-size:10.5px;line-height:1;
-    padding:0;display:flex;align-items:center;justify-content:center}
+  .filmstrip .frame-del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
+    background:rgba(0,0,0,.75);border:1px solid var(--line);color:#fff;padding:0}
+  .filmstrip .frame-del svg.i{width:9px;height:9px}
   .filmstrip .frame-del:hover{background:#c0392b}
 
-  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
-    background:var(--panel-2);border:1px solid var(--line);color:var(--text);
-    padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;
-    transition:opacity .25s,transform .25s;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:90vw;text-align:center}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* ============ bottom dock: controls under the image, scroll sideways ============ */
+  .dock{display:none;flex-direction:column;flex-shrink:0;background:var(--panel);
+    border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom)}
+  .dock-panes{position:relative;height:150px}
+  .dock-pane{display:none;height:100%}
+  .dock-pane.active{display:block}
+  .hscroll{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;height:100%;
+    align-items:center;padding:10px 14px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .hscroll::-webkit-scrollbar{display:none}
 
-  .dropzone{border:1.5px dashed var(--line);border-radius:var(--radius);padding:64px 48px;text-align:center;
-    cursor:pointer;transition:border-color .2s,background .2s;max-width:460px}
-  .dropzone:hover,.dropzone.drag{border-color:var(--accent);background:rgba(232,176,75,.04)}
-  .dropzone .icon{font-size:34px;margin-bottom:14px}
-  .dropzone h2{font-size:17px;font-weight:600;margin-bottom:6px}
-  .dropzone p{font-size:13px;color:var(--text-dim);line-height:1.5}
-  .dropzone p b{color:var(--accent);font-weight:500}
+  .ctl-card{min-width:196px;max-width:230px;flex-shrink:0;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:12px;padding:11px 13px;align-self:stretch;
+    display:flex;flex-direction:column;justify-content:center}
+  .ctl-card .lbl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:9px;gap:8px}
+  .ctl-card .lbl small{color:var(--text-dim);font-weight:400}
+  .ctl-card .lbl span:last-child{font-family:var(--mono);font-size:11px;color:var(--text-dim)}
+  .ctl-card.btn-card{align-items:stretch;gap:8px}
 
-  aside{width:336px;flex-shrink:0;border-left:1px solid var(--line);background:var(--panel);
-    display:flex;flex-direction:column;overflow-y:auto}
-  .panel-section{padding:16px 18px 6px}
-  .panel-section h3{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:1.6px;
-    text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-  .panel-section h3 .mini{font-size:10px;letter-spacing:.5px;text-transform:none;color:var(--text-dim);
-    background:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;cursor:pointer;font-family:var(--mono)}
-  .panel-section h3 .mini:hover{color:var(--text)}
-
-  .magic-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:14px}
-  .magic-btn{padding:12px 10px;border-radius:11px;font-size:12.5px;display:flex;flex-direction:column;
-    align-items:center;gap:4px;line-height:1.2}
-  .magic-btn .ic{font-size:17px}
-  .magic-btn.hero{grid-column:1 / -1;background:linear-gradient(120deg, rgba(232,176,75,.16), rgba(232,176,75,.05));
+  .magic-btn{flex-direction:column;gap:6px;min-width:118px;flex-shrink:0;align-self:stretch;
+    padding:10px 12px;border-radius:12px;font-size:12.5px;line-height:1.25;text-align:center}
+  .magic-btn small{color:var(--text-dim);font-size:10.5px;font-weight:400}
+  .magic-btn svg.i{width:20px;height:20px}
+  .magic-btn.hero{background:linear-gradient(120deg, rgba(232,176,75,.16), rgba(232,176,75,.05));
     border-color:rgba(232,176,75,.45)}
   .magic-btn.hero:hover{background:linear-gradient(120deg, rgba(232,176,75,.24), rgba(232,176,75,.1))}
+  .check-card{min-width:170px;flex-shrink:0;align-self:stretch;display:flex;align-items:center;gap:9px;
+    font-size:11.5px;color:var(--text-dim);cursor:pointer;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:12px;padding:10px 13px;line-height:1.35}
+  .check-card input{width:16px;height:16px;accent-color:var(--accent);flex-shrink:0}
 
-  .tool-row{display:flex;gap:8px;padding-bottom:14px;flex-wrap:wrap}
-  .tool-row button{flex:1;min-width:90px}
-
-  .filters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-bottom:14px}
-  .filter-item{cursor:pointer;text-align:center;position:relative}
+  /* filters: sideways strip of thumbnails */
+  .filters{display:flex;gap:9px;align-items:flex-start}
+  .filter-item{cursor:pointer;text-align:center;position:relative;width:66px;flex-shrink:0}
   .filter-item .thumb{width:100%;aspect-ratio:1;border-radius:9px;overflow:hidden;
     border:2px solid transparent;background:var(--panel-2);transition:border-color .15s}
   .filter-item.active .thumb{border-color:var(--accent)}
   .filter-item .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .filter-item .name{font-size:10.5px;color:var(--text-dim);margin-top:5px;font-family:var(--mono);letter-spacing:.3px;
+  .filter-item .name{font-size:9.5px;color:var(--text-dim);margin-top:4px;font-family:var(--mono);letter-spacing:.2px;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .filter-item.active .name{color:var(--accent)}
   .filter-item .del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;
-    background:rgba(0,0,0,.65);border:none;color:#fff;font-size:11px;line-height:1;padding:0;display:none}
-  .filter-item:hover .del{display:block}
+    background:rgba(0,0,0,.65);border:none;color:#fff;padding:0;display:none;align-items:center;justify-content:center}
+  .filter-item .del svg.i{width:8px;height:8px}
+  .filter-item:hover .del{display:flex}
 
-  .slider-row{margin-bottom:13px}
-  .slider-row .lbl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px}
-  .slider-row .lbl span:last-child{font-family:var(--mono);font-size:11px;color:var(--text-dim)}
   input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;
-    background:linear-gradient(to right, var(--accent) 0%, var(--accent) var(--fill,50%), var(--line) var(--fill,50%));cursor:pointer}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:linear-gradient(to right, var(--accent) 0%, var(--accent) var(--fill,50%), var(--line) var(--fill,50%));
+    cursor:pointer;touch-action:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:19px;height:19px;border-radius:50%;
     background:var(--text);border:none;box-shadow:0 1px 4px rgba(0,0,0,.5)}
-  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--text);border:none}
+  input[type=range]::-moz-range-thumb{width:19px;height:19px;border-radius:50%;background:var(--text);border:none}
   input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
   .reset-link{background:none;border:none;color:var(--text-dim);font-size:11.5px;padding:4px 0;
     text-decoration:underline;text-underline-offset:3px}
   .reset-link:hover{color:var(--text);background:none}
 
-  .panel-footer{margin-top:auto;padding:16px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
-  .panel-footer button{width:100%;padding:11px}
+  /* tab bar: sideways scroll */
+  .dock-tabs{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex-shrink:0;
+    padding:8px 12px 10px;border-top:1px solid var(--line);
+    -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .dock-tabs::-webkit-scrollbar{display:none}
+  .dock-tab{flex-shrink:0;border-radius:999px;padding:8px 15px;font-size:12px;
+    background:none;border:1px solid transparent;color:var(--text-dim);gap:6px}
+  .dock-tab svg.i{width:14px;height:14px}
+  .dock-tab.active{background:var(--panel-2);border-color:var(--line);color:var(--text)}
+  .dock-tab.active svg.i{color:var(--accent)}
+
+  .toast{position:fixed;bottom:calc(230px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;
+    transition:opacity .25s,transform .25s;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .dropzone{border:1.5px dashed var(--line);border-radius:var(--radius);padding:52px 40px;text-align:center;
+    cursor:pointer;transition:border-color .2s,background .2s;max-width:440px}
+  .dropzone:hover,.dropzone.drag{border-color:var(--accent);background:rgba(232,176,75,.04)}
+  .dropzone svg.i{width:36px;height:36px;margin:0 auto 14px;color:var(--text-dim)}
+  .dropzone h2{font-size:17px;font-weight:600;margin-bottom:6px}
+  .dropzone p{font-size:13px;color:var(--text-dim);line-height:1.5}
+  .dropzone p b{color:var(--accent);font-weight:500}
 
   #fileInput,#lookImport{display:none}
 
-  @media (max-width:760px){
-    main{flex-direction:column}
-    aside{width:100%;border-left:none;border-top:1px solid var(--line);max-height:none;overflow-y:visible}
-    #glCanvas{max-height:38vh}
-    .filters{grid-template-columns:repeat(4,1fr)}
-    .compare-hint{display:none !important}
-  }
   /* full-size preview: hide everything but the photo itself */
-  body.preview-mode aside{display:none !important}
+  body.preview-mode .dock{display:none !important}
   body.preview-mode .filmstrip{display:none !important}
-  body.preview-mode .stage{padding:10px}
-  body.preview-mode #glCanvas{max-height:calc(100vh - 150px) !important}
+  body.preview-mode .mode-bar{display:none !important}
   body.preview-mode #previewBtn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-  .preview-exit-hint{display:none;font-family:var(--mono);font-size:10.5px;color:var(--text-dim);text-align:center}
-  body.preview-mode .preview-exit-hint{display:block}
 
   @media (max-width:480px){
     header{gap:6px}
     .brand span{display:none}
     .header-actions{gap:5px}
     .header-actions button{padding:7px 9px;font-size:12.5px}
-    .header-actions button.icon-btn{padding:7px 9px}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 </head>
 <body>
+
+<!-- inline SVG icon library -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="ic-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+  <symbol id="ic-expand" viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M15 4h5v5"/><path d="M20 15v5h-5"/><path d="M9 20H4v-5"/></symbol>
+  <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+  <symbol id="ic-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="ic-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.7a1 1 0 0 0 .6.6L20 11.2l-5.5 1.9a1 1 0 0 0-.6.6L12 19.4l-1.9-5.7a1 1 0 0 0-.6-.6L4 11.2l5.5-1.9a1 1 0 0 0 .6-.6L12 3z"/><path d="M19 3v3"/><path d="M17.5 4.5h3"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.3 17.7-1.4 1.4"/><path d="m19.1 4.9-1.4 1.4"/></symbol>
+  <symbol id="ic-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></symbol>
+  <symbol id="ic-rotate" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.5 15a9 9 0 1 1-2-9.4L23 10"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="ic-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></symbol>
+  <symbol id="ic-sliders" viewBox="0 0 24 24"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></symbol>
+  <symbol id="ic-drop" viewBox="0 0 24 24"><path d="M12 2.7 6.3 8.4a8 8 0 1 0 11.4 0L12 2.7z"/></symbol>
+  <symbol id="ic-grain" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r=".8" fill="currentColor" stroke="none"/><circle cx="14" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r=".8" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="6" r=".8" fill="currentColor" stroke="none"/><circle cx="6" cy="18" r=".8" fill="currentColor" stroke="none"/></symbol>
+</svg>
 
 <header>
   <div class="brand">
@@ -207,11 +254,11 @@
     <span>pro edits, made easy</span>
   </div>
   <div class="header-actions">
-    <button class="icon-btn" id="undoBtn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↩︎</button>
-    <button class="icon-btn" id="redoBtn" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>↪︎</button>
-    <button class="icon-btn" id="previewBtn" title="Preview full-size" aria-label="Preview full-size" style="display:none">⛶</button>
-    <button id="newPhotoBtn" style="display:none">Add photos</button>
-    <button class="primary" id="saveBtn" style="display:none">Save ▾</button>
+    <button class="icon-btn" id="undoBtn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg class="i"><use href="#ic-undo"/></svg></button>
+    <button class="icon-btn" id="redoBtn" title="Redo (Ctrl+Y)" aria-label="Redo" disabled><svg class="i"><use href="#ic-redo"/></svg></button>
+    <button class="icon-btn" id="previewBtn" title="Preview full-size" aria-label="Preview full-size" style="display:none"><svg class="i"><use href="#ic-expand"/></svg></button>
+    <button class="icon-btn" id="newPhotoBtn" title="Add photos" aria-label="Add photos" style="display:none"><svg class="i"><use href="#ic-plus"/></svg></button>
+    <button class="primary" id="saveBtn" style="display:none">Save <svg class="i" style="width:13px;height:13px"><use href="#ic-chevron"/></svg></button>
     <div class="export-menu" id="exportMenu">
       <button data-fmt="jpeg">JPEG (.jpg)<small>Best for sharing — keeps your camera info (EXIF)</small></button>
       <button data-fmt="png">PNG (.png)<small>Lossless — biggest file, exact pixels</small></button>
@@ -222,138 +269,152 @@
   </div>
 </header>
 
-<main>
-  <div class="stage" id="stage">
-    <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Upload photos">
-      <div class="icon">🖼️</div>
-      <h2>Drop photos here</h2>
-      <p>or <b>tap to browse</b> — you can pick several at once for batch editing.<br>Everything happens on your device.</p>
-    </div>
-
-    <div class="canvas-wrap" id="canvasWrap">
-      <canvas id="glCanvas"></canvas>
-      <div class="crop-overlay" id="cropOverlay">
-        <div class="crop-shade" id="shadeT"></div><div class="crop-shade" id="shadeB"></div>
-        <div class="crop-shade" id="shadeL"></div><div class="crop-shade" id="shadeR"></div>
-        <div class="crop-rect" id="cropRect">
-          <div class="crop-handle" data-h="nw" style="left:0;top:0"></div>
-          <div class="crop-handle" data-h="n"  style="left:50%;top:0"></div>
-          <div class="crop-handle" data-h="ne" style="left:100%;top:0"></div>
-          <div class="crop-handle" data-h="e"  style="left:100%;top:50%"></div>
-          <div class="crop-handle" data-h="se" style="left:100%;top:100%"></div>
-          <div class="crop-handle" data-h="s"  style="left:50%;top:100%"></div>
-          <div class="crop-handle" data-h="sw" style="left:0;top:100%"></div>
-          <div class="crop-handle" data-h="w"  style="left:0;top:50%"></div>
-        </div>
-      </div>
-      <div class="sel-overlay" id="selOverlay"></div>
-    </div>
-
-    <div class="crop-bar" id="selBar">
-      <span style="font-size:11.5px;color:var(--text-dim);font-family:var(--mono)">tap the photo to add a spot · drag the small dot to resize</span>
-      <button class="primary" id="selDoneBtn">Done</button>
-    </div>
-
-    <div class="crop-bar" id="cropBar">
-      <button class="chip active" data-ratio="free">Free</button>
-      <button class="chip" data-ratio="orig">Original</button>
-      <button class="chip" data-ratio="1">1:1</button>
-      <button class="chip" data-ratio="0.8">4:5</button>
-      <button class="chip" data-ratio="1.5">3:2</button>
-      <button class="chip" data-ratio="1.7778">16:9</button>
-      <button class="primary" id="applyCropBtn">Apply crop</button>
-      <button id="cancelCropBtn">Cancel</button>
-    </div>
-
-    <div class="compare-hint" id="compareHint">hold the photo to compare with the original · Ctrl+Z to undo</div>
-    <div class="preview-exit-hint">tap ⛶ again to go back to editing</div>
-    <div class="filmstrip" id="filmstrip"></div>
+<div class="stage" id="stage">
+  <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Upload photos">
+    <svg class="i"><use href="#ic-image"/></svg>
+    <h2>Drop photos here</h2>
+    <p>or <b>tap to browse</b> — you can pick several at once for batch editing.<br>Everything happens on your device.</p>
   </div>
 
-  <aside id="panel" style="display:none">
-    <div class="panel-section">
-      <h3>One-tap magic</h3>
-      <div class="magic-row">
-        <button class="magic-btn hero" id="autoEditBtn"><span class="ic">✨</span>Auto edit<small style="color:var(--text-dim);font-size:10.5px">fixes light &amp; color for the scene</small></button>
-        <button class="magic-btn" id="autoEnhanceBtn"><span class="ic">☀️</span>Auto enhance</button>
-        <button class="magic-btn" id="autoCropBtn"><span class="ic">✂️</span>Auto crop</button>
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="glCanvas"></canvas>
+    <div class="crop-overlay" id="cropOverlay">
+      <div class="crop-shade" id="shadeT"></div><div class="crop-shade" id="shadeB"></div>
+      <div class="crop-shade" id="shadeL"></div><div class="crop-shade" id="shadeR"></div>
+      <div class="crop-rect" id="cropRect">
+        <div class="crop-handle" data-h="nw" style="left:0;top:0"></div>
+        <div class="crop-handle" data-h="n"  style="left:50%;top:0"></div>
+        <div class="crop-handle" data-h="ne" style="left:100%;top:0"></div>
+        <div class="crop-handle" data-h="e"  style="left:100%;top:50%"></div>
+        <div class="crop-handle" data-h="se" style="left:100%;top:100%"></div>
+        <div class="crop-handle" data-h="s"  style="left:50%;top:100%"></div>
+        <div class="crop-handle" data-h="sw" style="left:0;top:100%"></div>
+        <div class="crop-handle" data-h="w"  style="left:0;top:50%"></div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim);padding-bottom:10px;cursor:pointer">
-        <input type="checkbox" id="autoEditCropToggle" style="width:15px;height:15px;accent-color:var(--accent)">
-        Also reframe (crops ~8% of the photo to recenter it)
-      </label>
     </div>
+    <div class="sel-overlay" id="selOverlay"></div>
+  </div>
 
-    <div class="panel-section">
-      <h3>Crop &amp; rotate</h3>
-      <div class="tool-row">
-        <button id="manualCropBtn">✂️ Crop</button>
-        <button id="rotateBtn">⟳ Rotate 90°</button>
-      </div>
-      <div class="slider-row">
-        <div class="lbl"><span>Straighten</span><span id="straightenVal">0°</span></div>
-        <input type="range" id="straighten" min="-15" max="15" value="0" step="0.5" aria-label="Straighten">
-      </div>
-    </div>
+  <div class="compare-hint" id="compareHint">hold the photo to compare with the original</div>
+</div>
 
-    <div class="panel-section">
-      <h3>Filters <button class="mini" id="saveLookBtn">+ save my look</button></h3>
-      <div class="filters" id="filterGrid"></div>
-      <div class="slider-row">
-        <div class="lbl"><span>Filter strength</span><span id="intensityVal">100%</span></div>
-        <input type="range" id="intensity" min="0" max="100" value="100" aria-label="Filter strength">
-      </div>
-      <div class="tool-row">
-        <button id="exportLooksBtn">Export my looks</button>
-        <button id="importLooksBtn">Import looks</button>
-      </div>
-    </div>
+<!-- mode bars: appear above the dock while cropping / editing spots -->
+<div class="mode-bar" id="selBar">
+  <span class="bar-hint">tap the photo to add a spot · drag the small dot to resize</span>
+  <button class="primary" id="selDoneBtn">Done</button>
+</div>
 
-    <div class="panel-section">
-      <h3>Light</h3>
-      <div class="slider-row"><div class="lbl"><span>Brightness</span><span id="brightnessVal">0</span></div><input type="range" id="brightness" min="-50" max="50" value="0" aria-label="Brightness"></div>
-      <div class="slider-row"><div class="lbl"><span>Contrast</span><span id="contrastVal">0</span></div><input type="range" id="contrast" min="-50" max="50" value="0" aria-label="Contrast"></div>
-      <div class="slider-row"><div class="lbl"><span>Shadows <small style="color:var(--text-dim)">(lift dark areas)</small></span><span id="shadowsVal">0</span></div><input type="range" id="shadows" min="-50" max="50" value="0" aria-label="Shadows"></div>
-      <div class="slider-row"><div class="lbl"><span>Highlights <small style="color:var(--text-dim)">(rescue bright sky)</small></span><span id="highlightsVal">0</span></div><input type="range" id="highlights" min="-50" max="50" value="0" aria-label="Highlights"></div>
-    </div>
+<div class="mode-bar" id="cropBar">
+  <button class="chip active" data-ratio="free">Free</button>
+  <button class="chip" data-ratio="orig">Original</button>
+  <button class="chip" data-ratio="1">1:1</button>
+  <button class="chip" data-ratio="0.8">4:5</button>
+  <button class="chip" data-ratio="1.5">3:2</button>
+  <button class="chip" data-ratio="1.7778">16:9</button>
+  <button class="primary" id="applyCropBtn">Apply crop</button>
+  <button id="cancelCropBtn">Cancel</button>
+</div>
 
-    <div class="panel-section">
-      <h3>Color</h3>
-      <div class="slider-row"><div class="lbl"><span>Color pop</span><span id="saturationVal">0</span></div><input type="range" id="saturation" min="-100" max="100" value="0" aria-label="Saturation"></div>
-      <div class="slider-row"><div class="lbl"><span>Vibrance <small style="color:var(--text-dim)">(boosts only dull colors)</small></span><span id="vibranceVal">0</span></div><input type="range" id="vibrance" min="-50" max="50" value="0" aria-label="Vibrance"></div>
-      <div class="slider-row"><div class="lbl"><span>Warmth</span><span id="warmthVal">0</span></div><input type="range" id="warmth" min="-50" max="50" value="0" aria-label="Warmth"></div>
-    </div>
+<div class="filmstrip" id="filmstrip"></div>
 
-    <div class="panel-section">
-      <h3>Detail</h3>
-      <div class="slider-row"><div class="lbl"><span>Sharpen</span><span id="sharpenVal">0</span></div><input type="range" id="sharpen" min="0" max="100" value="0" aria-label="Sharpen"></div>
-      <div class="slider-row"><div class="lbl"><span>Grain <small style="color:var(--text-dim)">(film texture)</small></span><span id="grainVal">0</span></div><input type="range" id="grain" min="0" max="100" value="0" aria-label="Grain"></div>
-      <div class="slider-row"><div class="lbl"><span>Vignette</span><span id="vignetteVal">0</span></div><input type="range" id="vignette" min="0" max="100" value="0" aria-label="Vignette"></div>
-      <button class="reset-link" id="resetBtn">Reset all adjustments</button>
-    </div>
+<!-- ============ bottom dock: everything under the image, scrolls sideways ============ -->
+<nav class="dock" id="panel" aria-label="Editing controls">
+  <div class="dock-panes">
 
-    <div class="panel-section">
-      <h3>Selective (local) edits</h3>
-      <div class="tool-row">
-        <button id="selModeBtn">🎯 Edit spots</button>
+    <section class="dock-pane active" data-pane="magic" id="pane-magic">
+      <div class="hscroll">
+        <button class="magic-btn hero" id="autoEditBtn"><svg class="i"><use href="#ic-sparkle"/></svg>Auto edit<small>fixes light &amp; color for the scene</small></button>
+        <button class="magic-btn" id="autoEnhanceBtn"><svg class="i"><use href="#ic-sun"/></svg>Auto enhance</button>
+        <button class="magic-btn" id="autoCropBtn"><svg class="i"><use href="#ic-crop"/></svg>Auto crop</button>
+        <label class="check-card">
+          <input type="checkbox" id="autoEditCropToggle">
+          <span>Also reframe with Auto edit<br><small style="color:var(--text-dim)">crops ~8% to recenter the photo</small></span>
+        </label>
       </div>
-      <div id="selEmptyHint" style="font-size:12px;color:var(--text-dim);padding-bottom:10px">
-        Fix one area without changing the rest — brighten a face, deepen a corner of sky. Up to 4 spots per photo.
-      </div>
-      <div id="selPointControls" style="display:none">
-        <div class="slider-row"><div class="lbl"><span>Brightness</span><span id="selBrightVal">0</span></div><input type="range" id="selBright" min="-60" max="60" value="0"></div>
-        <div class="slider-row"><div class="lbl"><span>Contrast</span><span id="selContrastVal">0</span></div><input type="range" id="selContrast" min="-60" max="60" value="0"></div>
-        <div class="slider-row"><div class="lbl"><span>Color</span><span id="selSatVal">0</span></div><input type="range" id="selSat" min="-60" max="60" value="0"></div>
-        <div class="slider-row"><div class="lbl"><span>Warmth</span><span id="selWarmthVal">0</span></div><input type="range" id="selWarmth" min="-60" max="60" value="0"></div>
-        <button class="reset-link" id="selDeleteBtn">Remove this spot</button>
-      </div>
-    </div>
+    </section>
 
-    <div class="panel-footer">
-      <button class="primary" id="saveBtn2">Save ▾</button>
-    </div>
-  </aside>
-</main>
+    <section class="dock-pane" data-pane="crop" id="pane-crop">
+      <div class="hscroll">
+        <button class="magic-btn" id="manualCropBtn"><svg class="i"><use href="#ic-crop"/></svg>Crop</button>
+        <button class="magic-btn" id="rotateBtn"><svg class="i"><use href="#ic-rotate"/></svg>Rotate 90°</button>
+        <div class="ctl-card">
+          <div class="lbl"><span>Straighten</span><span id="straightenVal">0°</span></div>
+          <input type="range" id="straighten" min="-15" max="15" value="0" step="0.5" aria-label="Straighten">
+        </div>
+      </div>
+    </section>
+
+    <section class="dock-pane" data-pane="filters" id="pane-filters">
+      <div class="hscroll" style="align-items:center">
+        <div class="filters" id="filterGrid"></div>
+        <div class="ctl-card">
+          <div class="lbl"><span>Filter strength</span><span id="intensityVal">100%</span></div>
+          <input type="range" id="intensity" min="0" max="100" value="100" aria-label="Filter strength">
+        </div>
+        <div class="ctl-card btn-card">
+          <button id="saveLookBtn">+ Save my look</button>
+          <div style="display:flex;gap:8px">
+            <button id="exportLooksBtn" style="flex:1">Export</button>
+            <button id="importLooksBtn" style="flex:1">Import</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dock-pane" data-pane="light" id="pane-light">
+      <div class="hscroll">
+        <div class="ctl-card"><div class="lbl"><span>Brightness</span><span id="brightnessVal">0</span></div><input type="range" id="brightness" min="-50" max="50" value="0" aria-label="Brightness"></div>
+        <div class="ctl-card"><div class="lbl"><span>Contrast</span><span id="contrastVal">0</span></div><input type="range" id="contrast" min="-50" max="50" value="0" aria-label="Contrast"></div>
+        <div class="ctl-card"><div class="lbl"><span>Shadows <small>lift dark areas</small></span><span id="shadowsVal">0</span></div><input type="range" id="shadows" min="-50" max="50" value="0" aria-label="Shadows"></div>
+        <div class="ctl-card"><div class="lbl"><span>Highlights <small>rescue bright sky</small></span><span id="highlightsVal">0</span></div><input type="range" id="highlights" min="-50" max="50" value="0" aria-label="Highlights"></div>
+      </div>
+    </section>
+
+    <section class="dock-pane" data-pane="color" id="pane-color">
+      <div class="hscroll">
+        <div class="ctl-card"><div class="lbl"><span>Color pop</span><span id="saturationVal">0</span></div><input type="range" id="saturation" min="-100" max="100" value="0" aria-label="Saturation"></div>
+        <div class="ctl-card"><div class="lbl"><span>Vibrance <small>boosts only dull colors</small></span><span id="vibranceVal">0</span></div><input type="range" id="vibrance" min="-50" max="50" value="0" aria-label="Vibrance"></div>
+        <div class="ctl-card"><div class="lbl"><span>Warmth</span><span id="warmthVal">0</span></div><input type="range" id="warmth" min="-50" max="50" value="0" aria-label="Warmth"></div>
+      </div>
+    </section>
+
+    <section class="dock-pane" data-pane="detail" id="pane-detail">
+      <div class="hscroll">
+        <div class="ctl-card"><div class="lbl"><span>Sharpen</span><span id="sharpenVal">0</span></div><input type="range" id="sharpen" min="0" max="100" value="0" aria-label="Sharpen"></div>
+        <div class="ctl-card"><div class="lbl"><span>Grain <small>film texture</small></span><span id="grainVal">0</span></div><input type="range" id="grain" min="0" max="100" value="0" aria-label="Grain"></div>
+        <div class="ctl-card"><div class="lbl"><span>Vignette</span><span id="vignetteVal">0</span></div><input type="range" id="vignette" min="0" max="100" value="0" aria-label="Vignette"></div>
+        <div class="ctl-card btn-card"><button class="reset-link" id="resetBtn">Reset all adjustments</button></div>
+      </div>
+    </section>
+
+    <section class="dock-pane" data-pane="spots" id="pane-spots">
+      <div class="hscroll">
+        <button class="magic-btn" id="selModeBtn"><svg class="i"><use href="#ic-target"/></svg>Edit spots</button>
+        <div class="ctl-card" id="selEmptyHint" style="font-size:12px;color:var(--text-dim);line-height:1.45">
+          Fix one area without changing the rest — brighten a face, deepen a corner of sky. Up to 4 spots per photo.
+        </div>
+        <div id="selPointControls" style="display:none;gap:10px">
+          <div class="ctl-card"><div class="lbl"><span>Brightness</span><span id="selBrightVal">0</span></div><input type="range" id="selBright" min="-60" max="60" value="0" aria-label="Spot brightness"></div>
+          <div class="ctl-card"><div class="lbl"><span>Contrast</span><span id="selContrastVal">0</span></div><input type="range" id="selContrast" min="-60" max="60" value="0" aria-label="Spot contrast"></div>
+          <div class="ctl-card"><div class="lbl"><span>Color</span><span id="selSatVal">0</span></div><input type="range" id="selSat" min="-60" max="60" value="0" aria-label="Spot color"></div>
+          <div class="ctl-card"><div class="lbl"><span>Warmth</span><span id="selWarmthVal">0</span></div><input type="range" id="selWarmth" min="-60" max="60" value="0" aria-label="Spot warmth"></div>
+          <div class="ctl-card btn-card"><button class="reset-link" id="selDeleteBtn">Remove this spot</button></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="dock-tabs" role="tablist" aria-label="Tool sections">
+    <button class="dock-tab active" data-pane="magic" role="tab" aria-selected="true"><svg class="i"><use href="#ic-sparkle"/></svg>Magic</button>
+    <button class="dock-tab" data-pane="crop" role="tab" aria-selected="false"><svg class="i"><use href="#ic-crop"/></svg>Crop</button>
+    <button class="dock-tab" data-pane="filters" role="tab" aria-selected="false"><svg class="i"><use href="#ic-drop"/></svg>Filters</button>
+    <button class="dock-tab" data-pane="light" role="tab" aria-selected="false"><svg class="i"><use href="#ic-sun"/></svg>Light</button>
+    <button class="dock-tab" data-pane="color" role="tab" aria-selected="false"><svg class="i"><use href="#ic-sliders"/></svg>Color</button>
+    <button class="dock-tab" data-pane="detail" role="tab" aria-selected="false"><svg class="i"><use href="#ic-grain"/></svg>Detail</button>
+    <button class="dock-tab" data-pane="spots" role="tab" aria-selected="false"><svg class="i"><use href="#ic-target"/></svg>Spots</button>
+  </div>
+</nav>
 
 <div class="toast" id="toast" role="status"></div>
 <input type="file" id="fileInput" accept="image/*" multiple>
@@ -365,6 +426,7 @@
   const $ = id => document.getElementById(id);
   const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
   const lerp=(a,b,t)=>a+(b-a)*t;
+  const svgIcon=id=>`<svg class="i"><use href="#${id}"/></svg>`;
 
   /* =============== session autosave (IndexedDB) =============== */
   // Keeps your loaded photos + edits so closing/reopening the app doesn't lose progress.
@@ -432,6 +494,14 @@
     {id:'sunset',   name:'Sunset',   f:{b:1.03,c:1.06,s:1.2,se:.35,hr:-12}},
     {id:'moody',    name:'Moody',    f:{b:.92,c:1.18,s:.88,se:.12}},
     {id:'cinema',   name:'Cinema',   f:{b:.98,c:1.15,s:1.1,se:.18,hr:-6}},
+    // film-look pack — named by character, not by any brand
+    {id:'nostalgia',name:'Nostalgia',f:{b:1.04,c:.92,s:.92,se:.34,hr:6}},   // warm, honeyed, slightly soft — old family album
+    {id:'punch',    name:'Punch',    f:{b:1.02,c:1.24,s:1.5}},              // punchy vivid — deep contrast, loud color
+    {id:'retro',    name:'Retro',    f:{b:1.12,c:.78,s:.8,se:.22,hr:8}},    // faded retro — lifted blacks, washed color, yellow drift
+    {id:'carbon',   name:'Carbon',   f:{g:1,c:1.5,b:.97}},                  // high-contrast B&W — inky blacks, hot whites
+    {id:'cinewarm', name:'Cine Warm',f:{b:1.0,c:1.12,s:1.08,se:.26,hr:-5}}, // cinematic warm — amber cast, gentle contrast
+    {id:'cinecool', name:'Cine Cool',f:{b:.99,c:1.14,s:1.02,hr:-16,se:.06}},// cinematic cool — steel-blue cast, crisp contrast
+    {id:'pastel',   name:'Pastel',   f:{b:1.1,c:.85,s:.72,se:.06,hr:3}},    // pastel — bright, airy, low-saturation softness
   ];
   let myLooks = []; // {id,name,params,preset,intensity}
 
@@ -750,7 +820,7 @@
     syncSliders();render();pushHistory();
   });
 
-  /* =============== filters grid =============== */
+  /* =============== filters strip =============== */
   function presetCSS(f){return `brightness(${f.b??1}) contrast(${f.c??1}) saturate(${f.s??1}) sepia(${f.se??0}) hue-rotate(${f.hr??0}deg) grayscale(${f.g??0})`;}
   let thumbURL=null;
   function buildThumbs(){
@@ -775,9 +845,9 @@
       item.setAttribute('role','button');item.setAttribute('tabindex','0');
       item.setAttribute('aria-label','Apply '+p.name+' filter');
       item.innerHTML=`<div class="thumb"><img src="${thumbURL||''}" alt="" style="filter:${presetCSS(p.f)}"></div><div class="name">${p.name}</div>`+
-        (p.custom?`<button class="del" aria-label="Delete look">✕</button>`:'');
+        (p.custom?`<button class="del" aria-label="Delete look">${svgIcon('ic-close')}</button>`:'');
       const apply=()=>{state.preset=p.id;markActiveFilter();render();pushHistory();};
-      item.addEventListener('click',e=>{if(e.target.classList.contains('del'))return;apply();});
+      item.addEventListener('click',e=>{if(e.target.closest('.del'))return;apply();});
       item.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();apply();}});
       if(p.custom){item.querySelector('.del').addEventListener('click',()=>{
         myLooks=myLooks.filter(l=>l.id!==p.id);
@@ -804,7 +874,7 @@
     showToast('Saved "'+name+'" — tip: export your looks to keep them for next time');
   });
   $('exportLooksBtn').addEventListener('click',()=>{
-    if(myLooks.length===0){showToast('No saved looks yet — dial in a style and press "+ save my look"');return;}
+    if(myLooks.length===0){showToast('No saved looks yet — dial in a style and press "+ Save my look"');return;}
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([JSON.stringify(myLooks,null,2)],{type:'application/json'}));
     a.download='darkroom-looks.json';a.click();
@@ -833,12 +903,14 @@
     ctx.drawImage(src,0,0,cw,ch);
     const d=ctx.getImageData(0,0,cw,ch).data;
     const hist=new Array(256).fill(0);
-    let sumL=0,sumR=0,sumG=0,sumB=0,sumSat=0,skinPx=0,skyPx=0,skyTopPx=0;
     const n=d.length/4;
+    const luma=new Float32Array(n); // kept for the dark-texture pass below
+    let sumL=0,sumR=0,sumG=0,sumB=0,sumSat=0,skinPx=0,skyPx=0,skyTopPx=0;
     for(let i=0,p=0;i<d.length;i+=4,p++){
       const r=d[i],g=d[i+1],b=d[i+2];
       const l=Math.round(.2126*r+.7152*g+.0722*b);
       hist[l]++;sumL+=l;sumR+=r;sumG+=g;sumB+=b;
+      luma[p]=l;
       const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
       sumSat+=mx===0?0:(mx-mn)/mx;
       // skin heuristic (rough YCbCr / RGB rule of thumb, scene-level only — not per-pixel masking)
@@ -851,9 +923,29 @@
       }
     }
     const pct=q=>{let acc=0,t=n*q;for(let i=0;i<256;i++){acc+=hist[i];if(acc>=t)return i;}return 255;};
+    // shadow character: is the dark end of the histogram a solid black mass
+    // (a black shirt, a silhouette) or near-black tones with recoverable
+    // detail? Two signals:
+    // 1) tonal spread — how much of the dark region sits in the 11–48 band
+    //    vs pinned at 0–10
+    let crushed=0,band=0;
+    for(let i=0;i<=10;i++)crushed+=hist[i];
+    for(let i=11;i<=48;i++)band+=hist[i];
+    const shadowDetail=(crushed+band)>0?band/(crushed+band):1;
+    // 2) texture — mean luma gradient inside the dark region. Smooth fabric
+    //    or a flat silhouette scores near zero; genuinely crushed detail
+    //    doesn't. Both neighbors must be dark so the object's own outline
+    //    against a bright background doesn't count as "texture".
+    let darkEdge=0,darkEdgeN=0;
+    for(let y=0;y<ch;y++)for(let x=1;x<cw;x++){
+      const p=y*cw+x;
+      if(luma[p]<=48&&luma[p-1]<=48){darkEdge+=Math.abs(luma[p]-luma[p-1]);darkEdgeN++;}
+    }
+    const darkTexture=darkEdgeN>20?darkEdge/darkEdgeN:0;
     return {
       meanL:sumL/n,p2:pct(.02),p98:pct(.98),meanR:sumR/n,meanB:sumB/n,meanSat:sumSat/n,
       skinRatio:skinPx/n, skyRatio:skyTopPx?skyPx/skyTopPx:0,
+      shadowDetail, darkTexture,
     };
   }
 
@@ -872,14 +964,21 @@
   async function classifyScene(){
     const a=analyze();
     const faces=await detectFaces();
-    const isPortrait = faces.count>0 && faces.areaRatio>0.02 || a.skinRatio>0.16;
+    // portraitWeight: continuous 0..1 for how much of the frame is a person,
+    // from face area and skin coverage. A face filling ~8% of the frame or
+    // skin covering ~30% both read as "fully portrait"; a small face in a
+    // street scene, or a bit of skin at the frame edge, only nudges it.
+    const faceW=clamp(faces.areaRatio/0.08,0,1);
+    const skinW=clamp((a.skinRatio-0.06)/0.24,0,1);
+    const portraitWeight=clamp(Math.max(faceW,skinW),0,1);
+    const isPortrait = portraitWeight>0.35; // ≈ where the old hard thresholds sat
     const isLowLight = a.meanL<70;
     const isSkyScene = !isPortrait && a.skyRatio>0.22;
     let type='general';
     if(isLowLight) type='low-light';
     else if(isPortrait) type='portrait';
     else if(isSkyScene) type='landscape';
-    return {...a,...faces,type};
+    return {...a,...faces,portraitWeight,type};
   }
 
   function applyEnhance(a){
@@ -889,27 +988,38 @@
     let vibrance=a.meanSat<.28?clamp(Math.round((.3-a.meanSat)*160),8,30):6;
     let sharpen=18, shadows=0, highlights=0, warmth=clamp(Math.round(-(a.meanR-a.meanB)*.45),-18,18);
 
-    // then bend the fix toward what's actually in the photo
+    // skin-aware blend: soften the treatment in proportion to how much of
+    // the frame is actually a person, instead of a hard portrait on/off
+    // switch. A frame-filling face gets full protection; a small face in a
+    // wide scene gets a fraction — the rest of the scene keeps its punch.
+    const pw=a.portraitWeight||0;
+    if(pw>0){
+      contrast=Math.round(contrast*lerp(1,.55,pw));   // gentler on skin
+      vibrance=Math.round(vibrance*lerp(1,.6,pw));    // avoid orange/oversaturated skin
+      warmth=clamp(warmth+Math.round(6*pw),-18,22);   // flattering warmth, scaled
+      sharpen=Math.round(lerp(sharpen,10,pw));        // less edge sharpening on faces
+    }
+
+    // shadow lift only helps when the dark region actually holds detail —
+    // lifting a solid dark object (black shirt, clean silhouette) just
+    // turns it grey and noisy. Requires tonal spread in the dark band or
+    // real texture inside it.
+    const liftable = a.shadowDetail>0.45 || a.darkTexture>3.5;
+
     switch(a.type){
-      case 'portrait':
-        contrast=Math.round(contrast*.6);      // gentler on skin
-        vibrance=Math.round(vibrance*.7);       // avoid orange/oversaturated skin
-        warmth=clamp(warmth+6,-18,22);           // a touch of flattering warmth
-        sharpen=10;                              // less edge sharpening on faces
-        break;
       case 'landscape':
-        vibrance=clamp(vibrance+10,0,35);        // skies and foliage read better punchier
-        sharpen=26;
-        if(a.p98>=250)highlights=-16;            // protect a bright sky from clipping
+        vibrance=clamp(vibrance+10,0,35);            // skies and foliage read better punchier
+        sharpen=Math.max(sharpen,26);
+        if(a.p98>=250)highlights=-16;                // protect a bright sky from clipping
         break;
       case 'low-light':
         bright=clamp(bright+8,-10,30);
-        shadows=14;                              // lift shadow detail instead of just gaining exposure
-        sharpen=8;                               // sharpening amplifies noise in the dark — dial back
+        shadows=liftable?14:4;                       // lift only when there's detail to reveal
+        sharpen=Math.min(sharpen,8);                 // sharpening amplifies noise in the dark — dial back
         break;
     }
     if(a.p98>=252)highlights=Math.min(highlights,-14);
-    if(a.p2<=4)shadows=Math.max(shadows,12);
+    if(a.p2<=4 && liftable)shadows=Math.max(shadows,12);
 
     setSliderSilent('brightness',bright);
     setSliderSilent('contrast',contrast);
@@ -943,7 +1053,7 @@
     }
     pushHistory();
     const labels={portrait:'a portrait',landscape:'a landscape','low-light':'a low-light shot',general:'your photo'};
-    showToast('Auto edit done ✨ — read this as '+labels[a.type]+', everything is still adjustable');
+    showToast('Auto edit done — read this as '+labels[a.type]+', everything is still adjustable');
   });
 
   /* auto crop: faces first, saliency fallback */
@@ -1017,7 +1127,7 @@
     state.cropping=true;
     cr={x:.05,y:.05,w:.9,h:.9};
     cropOverlay.style.display='block';cropBar.style.display='flex';
-    layoutCrop();
+    requestAnimationFrame(layoutCrop); // stage may have resized when the bar appeared
   }
   function exitCrop(){state.cropping=false;cropOverlay.style.display='none';cropBar.style.display='none';}
   $('manualCropBtn').addEventListener('click',enterCrop);
@@ -1116,7 +1226,7 @@
     if(!activePhoto())return;
     state.selEditing=true;
     selOverlay.style.display='block';selBar.style.display='flex';
-    buildSelOverlay();
+    requestAnimationFrame(buildSelOverlay); // stage may have resized when the bar appeared
   }
   function exitSelMode(){
     state.selEditing=false;
@@ -1211,8 +1321,8 @@
   function syncSelControls(){
     const box=$('selPointControls'),hint=$('selEmptyHint');
     const p=state.selPoints[state.selActive];
-    if(!p){box.style.display='none';hint.style.display='block';return;}
-    hint.style.display='none';box.style.display='block';
+    if(!p){box.style.display='none';hint.style.display='flex';return;}
+    hint.style.display='none';box.style.display='flex';
     ['selBright','selContrast','selSat','selWarmth'].forEach((id,idx)=>{
       const key=['brightness','contrast','saturation','warmth'][idx];
       const el=$(id);el.value=p[key];
@@ -1242,37 +1352,42 @@
   });
   window.addEventListener('resize',()=>{if(state.selEditing)layoutSelOverlay();});
 
-  /* =============== compare (hold-to-compare, with manual scroll takeover) =============== */
-  // Safari unreliably honors touch-action on <canvas>, so instead of trusting the browser
-  // to scroll the page when you drag off the canvas, we detect the drag ourselves and
-  // scroll the page manually — this works regardless of that bug.
-  let comparePending=false,compareTimer=null,compareSX=0,compareSY=0,compareLastY=0,scrolling=false;
-  const MOVE_TOLERANCE=8; // px of finger movement before we treat it as a scroll, not a hold
+  /* =============== dock tabs (controls under the image, scroll sideways) =============== */
+  const dockTabs=[...document.querySelectorAll('.dock-tab')];
+  function selectPane(name){
+    dockTabs.forEach(t=>{
+      const on=t.dataset.pane===name;
+      t.classList.toggle('active',on);
+      t.setAttribute('aria-selected',on?'true':'false');
+      if(on)t.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
+    });
+    document.querySelectorAll('.dock-pane').forEach(p=>p.classList.toggle('active',p.dataset.pane===name));
+    // leaving a mode's tab exits that mode so the photo is never blocked
+    if(name!=='spots'&&state.selEditing)exitSelMode();
+    if(name!=='crop'&&state.cropping)exitCrop();
+  }
+  dockTabs.forEach(t=>t.addEventListener('click',()=>selectPane(t.dataset.pane)));
+
+  /* =============== compare (hold the photo to see the original) =============== */
+  let comparePending=false,compareTimer=null,compareSX=0,compareSY=0;
+  const MOVE_TOLERANCE=8; // px of finger movement before we treat it as a drag, not a hold
   glCanvas.addEventListener('pointerdown',e=>{
     if(state.cropping||state.selEditing)return;
-    comparePending=true;scrolling=false;
-    compareSX=e.clientX;compareSY=e.clientY;compareLastY=e.clientY;
+    comparePending=true;
+    compareSX=e.clientX;compareSY=e.clientY;
     clearTimeout(compareTimer);
     compareTimer=setTimeout(()=>{
       if(comparePending){state.comparing=true;render();}
-    },180); // long enough to distinguish a hold from the start of a scroll
+    },180);
   },{passive:true});
   glCanvas.addEventListener('pointermove',e=>{
-    if(comparePending){
-      if(Math.abs(e.clientX-compareSX)>MOVE_TOLERANCE||Math.abs(e.clientY-compareSY)>MOVE_TOLERANCE){
-        comparePending=false;clearTimeout(compareTimer);
-        if(state.comparing){state.comparing=false;render();}
-        scrolling=true;
-      }
-    }
-    if(scrolling){
-      const dy=compareLastY-e.clientY;
-      compareLastY=e.clientY;
-      (document.scrollingElement||document.documentElement).scrollTop+=dy;
+    if(comparePending&&(Math.abs(e.clientX-compareSX)>MOVE_TOLERANCE||Math.abs(e.clientY-compareSY)>MOVE_TOLERANCE)){
+      comparePending=false;clearTimeout(compareTimer);
+      if(state.comparing){state.comparing=false;render();}
     }
   },{passive:true});
   function endCompareGesture(){
-    comparePending=false;scrolling=false;clearTimeout(compareTimer);
+    comparePending=false;clearTimeout(compareTimer);
     if(state.comparing){state.comparing=false;render();}
   }
   glCanvas.addEventListener('pointerup',endCompareGesture);
@@ -1286,7 +1401,7 @@
     if(!previewMode && state.selEditing)exitSelMode();
     previewMode=!previewMode;
     document.body.classList.toggle('preview-mode',previewMode);
-    $('previewBtn').textContent=previewMode?'✕':'⛶';
+    $('previewBtn').innerHTML=svgIcon(previewMode?'ic-close':'ic-expand');
     $('previewBtn').setAttribute('aria-label',previewMode?'Exit preview':'Preview full-size');
     // canvas display size changed — relayout anything overlaid on top of it
     requestAnimationFrame(()=>{
@@ -1435,9 +1550,9 @@
     $('canvasWrap').style.display='flex';
     $('panel').style.display='flex';
     $('compareHint').style.display='block';
-    $('newPhotoBtn').style.display='inline-block';
-    $('saveBtn').style.display='inline-block';
-    $('previewBtn').style.display='inline-block';
+    $('newPhotoBtn').style.display='inline-flex';
+    $('saveBtn').style.display='inline-flex';
+    $('previewBtn').style.display='inline-flex';
     buildFilmstrip();
     refreshBake();
     if(history.stack.length===0)pushHistory();
@@ -1451,9 +1566,9 @@
       f.className='frame'+(i===state.active?' active':'');
       f.setAttribute('role','button');f.setAttribute('tabindex','0');
       f.setAttribute('aria-label','Edit photo '+(i+1));
-      f.innerHTML=`<img src="${ph.thumbUrl}" alt=""><button class="frame-del" aria-label="Remove this photo" title="Remove this photo">✕</button>`;
+      f.innerHTML=`<img src="${ph.thumbUrl}" alt=""><button class="frame-del" aria-label="Remove this photo" title="Remove this photo">${svgIcon('ic-close')}</button>`;
       const pick=()=>{state.active=i;state.selPoints=[];state.selActive=-1;buildFilmstrip();refreshBake();syncSliders();syncSelControls();if(state.selEditing)buildSelOverlay();};
-      f.addEventListener('click',e=>{if(e.target.classList.contains('frame-del'))return;pick();});
+      f.addEventListener('click',e=>{if(e.target.closest('.frame-del'))return;pick();});
       f.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
       f.querySelector('.frame-del').addEventListener('click',e=>{e.stopPropagation();removePhoto(i);});
       fs.appendChild(f);
@@ -1496,18 +1611,9 @@
   /* =============== export =============== */
   const exportMenu=$('exportMenu');
   $('saveBtn').addEventListener('click',e=>{e.stopPropagation();exportMenu.classList.toggle('open');});
-  $('saveBtn2').addEventListener('click',e=>{e.stopPropagation();exportMenu.classList.add('open');});
   document.addEventListener('click',()=>exportMenu.classList.remove('open'));
   const FMT={jpeg:{mime:'image/jpeg',ext:'jpg',q:.94},png:{mime:'image/png',ext:'png'},webp:{mime:'image/webp',ext:'webp',q:.94}};
 
-  function renderFull(ph){
-    const maxTex=gl.getParameter(gl.MAX_TEXTURE_SIZE)||4096;
-    const full=bakePhoto(ph,maxTex);
-    glCanvas.width=full.width;glCanvas.height=full.height;
-    uploadTexture(full);
-    drawGL(glCanvas,full,false);
-    return new Promise(res=>glCanvas.toBlob(b=>res(b),'image/png'));
-  }
   async function exportPhoto(ph,fmt){
     const f=FMT[fmt]||FMT.jpeg;
     const maxTex=gl.getParameter(gl.MAX_TEXTURE_SIZE)||4096;
@@ -1540,7 +1646,7 @@
             await new Promise(r=>setTimeout(r,350)); // let downloads queue politely
           }
           state.active=keep;refreshBake();
-          showToast('All photos saved ✔');
+          showToast('All photos saved');
         }else{
           const blob=await exportPhoto(activePhoto(),fmt);
           saveBlob(blob,activePhoto().name+'-edited.'+FMT[fmt].ext);
