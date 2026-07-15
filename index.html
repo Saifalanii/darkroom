@@ -1038,18 +1038,30 @@
     let bright=clamp(Math.round((120-a.meanL)/2.2),-22,25);
     let contrast=clamp(Math.round((225-(a.p98-a.p2))/3.2),0,22);
     let vibrance=a.meanSat<.28?clamp(Math.round((.3-a.meanSat)*160),8,30):6;
-    let sharpen=18, shadows=0, highlights=0, warmth=clamp(Math.round(-(a.meanR-a.meanB)*.45),-18,18);
+    let sharpen=18, shadows=0, warmth=clamp(Math.round(-(a.meanR-a.meanB)*.45),-18,18);
 
-    // skin-aware blend: soften the treatment in proportion to how much of
-    // the frame is actually a person, instead of a hard portrait on/off
-    // switch. A frame-filling face gets full protection; a small face in a
-    // wide scene gets a fraction — the rest of the scene keeps its punch.
+    // highlight protection: continuous, not a "only kick in once already
+    // clipped" trigger. As the photo's bright end (p98) gets closer to
+    // 255 — and as the brightness/contrast we're about to add pushes
+    // tones up further — pull highlights back proportionally, so skin
+    // and light fabric don't blow out before the histogram says they're
+    // fully clipped.
+    const headroomUsed=clamp((a.p98-195)/60,0,1);          // 0 at p98≈195, 1 at p98=255
+    const pushFactor=clamp((bright+contrast*0.6)/40,0,1);  // how hard bright+contrast push tones up
+    let highlights = headroomUsed>0 ? -Math.round(26*headroomUsed*(0.5+0.5*pushFactor)) : 0;
+
+    // skin-aware blend: soften the treatment — and protect highlights
+    // harder — in proportion to how much of the frame is actually a
+    // person, instead of a hard portrait on/off switch. A frame-filling
+    // face gets full protection; a small face in a wide scene gets a
+    // fraction — the rest of the scene keeps its punch.
     const pw=a.portraitWeight||0;
     if(pw>0){
       contrast=Math.round(contrast*lerp(1,.55,pw));   // gentler on skin
       vibrance=Math.round(vibrance*lerp(1,.6,pw));    // avoid orange/oversaturated skin
       warmth=clamp(warmth+Math.round(6*pw),-18,22);   // flattering warmth, scaled
       sharpen=Math.round(lerp(sharpen,10,pw));        // less edge sharpening on faces
+      highlights=Math.round(highlights*lerp(1,1.4,pw)); // skin & light fabric blow out easily — protect more
     }
 
     // shadow lift only helps when the dark region actually holds detail —
@@ -1062,7 +1074,6 @@
       case 'landscape':
         vibrance=clamp(vibrance+10,0,35);            // skies and foliage read better punchier
         sharpen=Math.max(sharpen,26);
-        if(a.p98>=250)highlights=-16;                // protect a bright sky from clipping
         break;
       case 'low-light':
         bright=clamp(bright+8,-10,30);
@@ -1070,8 +1081,8 @@
         sharpen=Math.min(sharpen,8);                 // sharpening amplifies noise in the dark — dial back
         break;
     }
-    if(a.p98>=252)highlights=Math.min(highlights,-14);
     if(a.p2<=4 && liftable)shadows=Math.max(shadows,12);
+    highlights=clamp(highlights,-40,0);
 
     setSliderSilent('brightness',bright);
     setSliderSilent('contrast',contrast);
@@ -1096,7 +1107,13 @@
     // pick a filter preset that suits the scene instead of always Original
     const presetByType={portrait:'golden',landscape:'vivid','low-light':'film',general:'original'};
     state.preset=presetByType[a.type]||'original';
-    state.intensity = state.preset==='original' ? 1 : 0.55;
+    // presets like Golden/Vivid add their own brightness, warmth, and
+    // saturation on top of the slider fix above — if the photo's highlights
+    // are already tight, dial the preset back so it doesn't compound into
+    // a blown-out sky or skin instead of adding character
+    const headroomUsed=clamp((a.p98-195)/60,0,1);
+    const baseIntensity = state.preset==='original' ? 1 : 0.55;
+    state.intensity = state.preset==='original' ? 1 : clamp(baseIntensity*(1-0.6*headroomUsed),0.18,1);
     $('intensity').value=Math.round(state.intensity*100);$('intensity').dispatchEvent(new Event('input'));
     setSliderSilent('vignette', a.type==='portrait'?16:10);
     markActiveFilter();
@@ -1723,4 +1740,3 @@
 </script>
 </body>
 </html>
-
