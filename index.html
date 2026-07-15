@@ -296,6 +296,12 @@
     {id:'cinema',       name:'Cinema Flat',      f:{b:1.0,c:.82,s:.85,se:.05,grain:.32,halation:.28}},
     {id:'editorial',    name:'Editorial Punch',  f:{b:1.0,c:1.16,s:1.32,split:.65}},
     {id:'storybook',    name:'Storybook Pastel', f:{b:1.05,c:.88,s:1.2,se:.07,split:.7,grain:.08,halation:.12}},
+    {id:'goldenhour',   name:'Golden Hour',      f:{b:1.06,c:1.0,s:1.1,se:.15,hr:4,halation:.4,grain:.1}},
+    {id:'frost',        name:'Arctic Frost',     f:{b:1.02,c:1.1,s:.78,hr:-14,grain:.05}},
+    {id:'matte',        name:'Faded Matte',      f:{b:1.04,c:.76,s:.82,se:.08,grain:.2}},
+    {id:'midnight',     name:'Midnight Teal',    f:{b:.94,c:1.18,s:.95,split:.6,hr:-6,grain:.15}},
+    {id:'gelatin',      name:'Silver Gelatin',   f:{g:1,c:1.05,b:1.05,grain:.3}},
+    {id:'crossproc',    name:'Retro Cross',      f:{b:1.02,c:1.1,s:1.25,hr:14,grain:.18,halation:.08}},
   ];
   const DEFAULT_PARAMS = {brightness:0,contrast:0,saturation:0,vibrance:0,warmth:0,shadows:0,highlights:0,sharpen:0,vignette:0,grain:0};
   function defaultEdit(){return {preset:'original', intensity:1, params:{...DEFAULT_PARAMS}};}
@@ -603,6 +609,7 @@
   async function enhancePhoto(ph,forcePreset){
     $('busyVeil').classList.add('show');
     await new Promise(r=>requestAnimationFrame(r)); // let the spinner paint before the sync analysis work
+    if(!ph.baked) ph.baked=bakePhoto(ph,MAX_PREVIEW); // non-active photos (e.g. during "save all") haven't been baked yet
     const a=await classifyScene(ph);
     const params=computeEnhanceParams(a);
     const presetByType={portrait:'golden',landscape:'vivid','low-light':'film',general:'original'};
@@ -1009,10 +1016,49 @@
     if(fmt==='jpeg'&&ph.exif)blob=await spliceExif(blob,ph.exif);
     return blob;
   }
-  function saveBlob(blob,name){
+  // Web Share first: this hands the file straight to the OS share sheet
+  // (Photos, Files, AirDrop, etc.) with no navigation involved, which is
+  // what actually avoids the reload-out-of-the-PWA behavior a download
+  // link can trigger on iOS. Falls back to the classic download link only
+  // where file sharing genuinely isn't available.
+  function canShareFiles(files){
+    try{ return !!(navigator.canShare && navigator.share && navigator.canShare({files})); }
+    catch(err){ return false; }
+  }
+  function downloadBlob(blob,name){
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);a.download=name;a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  }
+  // Returns 'shared', 'downloaded', or 'cancelled' (user dismissed the share sheet).
+  async function shareOrDownload(blob,name,mime){
+    const file=new File([blob],name,{type:mime});
+    if(canShareFiles([file])){
+      try{
+        await navigator.share({files:[file]});
+        return 'shared';
+      }catch(err){
+        if(err && err.name==='AbortError') return 'cancelled';
+        // any other share failure falls through to the download fallback below
+      }
+    }
+    downloadBlob(blob,name);
+    return 'downloaded';
+  }
+  async function shareOrDownloadAll(items){
+    // items: [{blob,name,mime}]. Try one share sheet with every file at
+    // once; only fall back to per-file handling if the browser can't do
+    // a multi-file share.
+    const files=items.map(it=>new File([it.blob],it.name,{type:it.mime}));
+    if(canShareFiles(files)){
+      try{ await navigator.share({files}); return 'shared'; }
+      catch(err){ if(err && err.name==='AbortError') return 'cancelled'; }
+    }
+    for(const it of items){
+      await shareOrDownload(it.blob,it.name,it.mime);
+      await new Promise(r=>setTimeout(r,350));
+    }
+    return 'downloaded';
   }
   exportMenu.querySelectorAll('button[data-fmt]').forEach(btn=>{
     btn.addEventListener('click',async()=>{
@@ -1021,21 +1067,25 @@
       if(!activePhoto())return;
       try{
         if(fmt==='all'){
-          showToast('Enhancing and saving '+state.photos.length+' photo(s)…');
+          showToast('Enhancing '+state.photos.length+' photo(s)…');
           const keep=state.active;
+          const items=[];
           for(let i=0;i<state.photos.length;i++){
             if(!state.photos[i].enhanced) await enhancePhoto(state.photos[i]);
             const blob=await exportPhoto(state.photos[i],'jpeg');
-            saveBlob(blob,state.photos[i].name+'-enhanced.jpg');
-            await new Promise(r=>setTimeout(r,350));
+            items.push({blob,name:state.photos[i].name+'-enhanced.jpg',mime:'image/jpeg'});
           }
           state.active=keep; refreshBake(); buildFilmstrip(); syncActionBar();
-          showToast('All photos saved');
+          const result=await shareOrDownloadAll(items);
+          if(result==='downloaded')showToast('All photos saved');
+          else if(result==='shared')showToast('Ready to save or share');
         }else{
           const blob=await exportPhoto(activePhoto(),fmt);
-          saveBlob(blob,activePhoto().name+'-enhanced.'+FMT[fmt].ext);
+          const name=activePhoto().name+'-enhanced.'+FMT[fmt].ext;
+          const result=await shareOrDownload(blob,name,FMT[fmt].mime);
           refreshBake();
-          showToast('Saved as .'+FMT[fmt].ext+(fmt==='jpeg'&&activePhoto().exif?' — camera info kept':''));
+          if(result==='downloaded')showToast('Saved as .'+FMT[fmt].ext+(fmt==='jpeg'&&activePhoto().exif?' — camera info kept':''));
+          else if(result==='shared')showToast('Ready to save or share'+(fmt==='jpeg'&&activePhoto().exif?' — camera info kept':''));
         }
       }catch(err){
         console.error(err);refreshBake();
